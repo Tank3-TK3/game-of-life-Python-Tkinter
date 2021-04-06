@@ -1,12 +1,23 @@
+################################################################################
+#                                                                              #
+#                    Coded by Roberto (Tank3) Cruz Lozano                      #
+#                                                                              #
+################################################################################
+
+################################################################################
+#                   MODULES
+
 import tkinter as tk
 import tkinter.font
 import random
 
-def randHex():
-    hex_number = "#%02x%02x%02x" % (random.randint(0,255), random.randint(0,255), random.randint(0,255))
-    return hex_number
+################################################################################
+#                   FUNCTIONS
 
-def createDashboardMatrix(): #ID,X1,Y1,X2,Y2,Status
+def randHex(): # Generates and returns a random hexadecimal number within the RGB range
+    return "#%02x%02x%02x" % (random.randint(0,255), random.randint(0,255), random.randint(0,255))
+
+def createDashboardMatrix(): # Generates and returns the game matrix with the data ID,X1,Y1,X2,Y2,Status
     matrix = []
     x,y,cont = 0,0,0
     for i in range(0,25):
@@ -19,7 +30,7 @@ def createDashboardMatrix(): #ID,X1,Y1,X2,Y2,Status
         x=0
     return matrix
 
-def clickMouseButton(event):
+def clickMouseButton(event): # Color or erase the selected space inside the board
     x,y=event.x,event.y
     for i in gameMatrix:
         for j in i:
@@ -33,10 +44,10 @@ def clickMouseButton(event):
                     canvasBoard.create_rectangle(j[1]+5,j[2]+5,j[3]-5,j[4]-5,fill="#666B8A",outline="#666B8A")
                     j[5] = 0
 
-def clickStartButton():
+def clickStartButton(): # Starts the game
     print("HOLO")
 
-def clickCleanButton():
+def clickCleanButton(): # Clears the game board
     for i in gameMatrix:
         for j in i:
             if j[5] == 1:
@@ -44,8 +55,11 @@ def clickCleanButton():
                 canvasBoard.create_rectangle(j[1]+5,j[2]+5,j[3]-5,j[4]-5,fill="#666B8A",outline="#666B8A")
                 j[5] = 0
 
-def clickExitButton():
+def clickExitButton(): # Closes the game
     window.destroy()
+
+################################################################################
+#                   MAIN
 
 if __name__ == '__main__':
     gameMatrix = createDashboardMatrix()
