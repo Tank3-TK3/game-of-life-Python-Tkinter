@@ -10,6 +10,8 @@
 import tkinter as tk
 import tkinter.font
 import random
+import copy
+import time
 
 ################################################################################
 #                   FUNCTIONS
@@ -44,8 +46,76 @@ def clickMouseButton(event): # Color or erase the selected space inside the boar
                     canvasBoard.create_rectangle(j[1]+5,j[2]+5,j[3]-5,j[4]-5,fill="#666B8A",outline="#666B8A")
                     j[5] = 0
 
+def countingNeighbors(nei,i,j):
+    try:
+        if gameMatrix[i-1][j-1][5] == 1:
+            nei+=1
+        if gameMatrix[i][j-1][5] == 1:
+            nei+=1
+        if gameMatrix[i+1][j-1][5] == 1:
+            nei+=1
+        if gameMatrix[i-1][j][5] == 1:
+            nei+=1
+        if gameMatrix[i+1][j][5] == 1:
+            nei+=1
+        if gameMatrix[i-1][j+1][5] == 1:
+            nei+=1
+        if gameMatrix[i][j+1][5] == 1:
+            nei+=1
+        if gameMatrix[i+1][j+1][5] == 1:
+            nei+=1
+    except:
+        pass
+    return nei
+
+def drawGameBoard():
+    for i in gameMatrix:
+        for j in i:
+            if j[5] == 1:
+                canvasBoard.create_rectangle(j[1],j[2],j[3],j[4],fill=randHex(),outline="#FFFFFF")
+                canvasBoard.create_rectangle(j[1]+5,j[2]+5,j[3]-5,j[4]-5,fill="#000000",outline="#000000")
+            else:
+                canvasBoard.create_rectangle(j[1],j[2],j[3],j[4],fill="#666B8A",outline="#FFFFFF")
+                canvasBoard.create_rectangle(j[1]+5,j[2]+5,j[3]-5,j[4]-5,fill="#666B8A",outline="#666B8A")
+
 def clickStartButton(): # Starts the game
-    print("HOLO")
+    neigcount = 0
+    #while True:
+    for i in range(0,25):
+        for j in range(0,25):
+            if gameMatrix[i][j][5] == 1:
+                try:
+                    if gameMatrix[i-1][j-1][5] == 1:
+                        neigcount+=1
+                    if gameMatrix[i][j-1][5] == 1:
+                        neigcount+=1
+                    if gameMatrix[i+1][j-1][5] == 1:
+                        neigcount+=1
+                    if gameMatrix[i-1][j][5] == 1:
+                        neigcount+=1
+                    if gameMatrix[i+1][j][5] == 1:
+                        neigcount+=1
+                    if gameMatrix[i-1][j+1][5] == 1:
+                        neigcount+=1
+                    if gameMatrix[i][j+1][5] == 1:
+                        neigcount+=1
+                    if gameMatrix[i+1][j+1][5] == 1:
+                        neigcount+=1
+                except:
+                    pass
+                if neigcount == 2 or neigcount == 3:
+                    gameMatrix[i][j][5] = 1
+                else:
+                    gameMatrix[i][j][5] = 0
+            else:
+                neigcount = countingNeighbors(neigcount,i,j)
+                if neigcount == 3:
+                    gameMatrix[i][j][5] = 1
+                else:
+                    gameMatrix[i][j][5] = 0
+            neigcount=0
+    drawGameBoard()
+    #time.sleep(1)
 
 def clickCleanButton(): # Clears the game board
     for i in gameMatrix:
@@ -92,8 +162,8 @@ if __name__ == '__main__':
     for i in range(0,500,20):
         canvasBoard.create_line(i,0,i,500,fill="#FFFFFF")
         canvasBoard.create_line(0,i,500,i,fill="#FFFFFF")
-    canvasBoard.bind("<Button-1>", clickMouseButton)
-    canvasBoard.bind("<Button-3>", clickMouseButton)
+    canvasBoard.bind("<Button-1>",clickMouseButton)
+    canvasBoard.bind("<Button-3>",clickMouseButton)
 
     frameLeftOne = tk.Frame(frameLeft,background="#22232D",width="500",height="100")
     frameLeftOne.pack_propagate(0)
