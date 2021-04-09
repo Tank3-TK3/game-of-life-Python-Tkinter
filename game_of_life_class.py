@@ -16,11 +16,13 @@ class GameOfLifeClass():
     app = None
     gameMatrix = None
     neigcount = None
+    status = None
 
     def __init__(self, app):
         self.app = app
         self.gameMatrix = self.createDashboardMatrix()
         self.neigcount = 0
+        self.status = False
     
     def createDashboardMatrix(self): # Generates and returns the game matrix
         matrix = []
@@ -110,10 +112,15 @@ class GameOfLifeClass():
         print()
 
     def clickStartButton(self): # Starts the game
+        self.status = True
+        
+    def clickStopButton(self): # Starts the game
+        self.status = False
+
+    def playGame(self):
         self.aliveDead()
         self.updateGameBoard()
         self.drawGameBoard()
         
-
     def __del__(self):
         return 0
