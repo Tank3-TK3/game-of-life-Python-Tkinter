@@ -9,6 +9,7 @@
 
 import tkinter as tk
 from tkinter import font
+import random
 
 ################################################################################
 #                                CLASS
@@ -41,7 +42,7 @@ class GameOfLifeInterface(tk.Frame):
         self.txtInformation = self.drawTextInformation()
 
     def drawRoot(self,root):
-        root.title("Game of Life (v1.0)")
+        root.title("Game of Life (v1.01)")
         root.geometry("600x700+50+50")
         root.iconbitmap("./img/Glider.ico")
         root.config(background = "#FFFFFF")
@@ -102,7 +103,7 @@ class GameOfLifeInterface(tk.Frame):
         return frameInformation
 
     def drawTextInformation(self):
-        txtInformation = [["v1.0", "right"], ["Coded by Tank3", "left"]]
+        txtInformation = [["v1.01", "right"], ["Coded by Tank3", "left"]]
         for i in txtInformation:
             i.append(tk.Label(self.frameInformation, foreground = "#FFFFFF", background = "#22232D"))
             i[2].config(text = i[0], font = self.fontText)
@@ -114,17 +115,20 @@ class GameOfLifeInterface(tk.Frame):
         if j[7] == None or j[8] == None:
             j[7] = self.canvasBoard.create_rectangle(j[1], j[2], j[3], j[4])
             j[8] = self.canvasBoard.create_rectangle(j[1] + 5, j[2] + 5, j[3] - 5, j[4] - 5)
-            self.canvasBoard.itemconfig(j[7], fill = "#FFFFFF", outline = "#FFFFFF")
-            self.canvasBoard.itemconfig(j[8], fill = "#000000", outline = "#000000")
+            self.canvasBoard.itemconfig(j[7], fill = self.randHex(), outline = self.randHex())
+            self.canvasBoard.itemconfig(j[8], fill = self.randHex(), outline = self.randHex())
         else:
-            self.canvasBoard.itemconfig(j[7], fill = "#FFFFFF", outline = "#FFFFFF")
-            self.canvasBoard.itemconfig(j[8], fill = "#000000", outline = "#000000")
+            self.canvasBoard.itemconfig(j[7], fill = self.randHex(), outline = self.randHex())
+            self.canvasBoard.itemconfig(j[8], fill = self.randHex(), outline = self.randHex())
         j[5] = 1
 
     def deadCell(self,j):
         self.canvasBoard.itemconfig(j[7], fill = "#666B8A", outline = "#FFFFFF")
         self.canvasBoard.itemconfig(j[8], fill = "#666B8A", outline = "#666B8A")
         j[5] = 0
+
+    def randHex(self):
+        return "#%02x%02x%02x" % (random.randint(0,255), random.randint(0,255), random.randint(0,255))
 
     def __del__(self):
         return 0
