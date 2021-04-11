@@ -5,11 +5,6 @@
 ################################################################################
 
 ################################################################################
-#                               MODULES
-
-import tkinter as tk
-
-################################################################################
 #                                CLASS
 
 class GameOfLifeClass():
@@ -108,8 +103,7 @@ class GameOfLifeClass():
             for j in i:
                 print("[",j[5],j[6],"]",end="")
             print()
-        print()
-        print()
+        print("\n\n")
 
     def clickStartButton(self): # Starts the game
         self.status = True
@@ -121,6 +115,22 @@ class GameOfLifeClass():
         self.aliveDead()
         self.updateGameBoard()
         self.drawGameBoard()
+
+    def randHex(self):
+        return "#%02x%02x%02x" % (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+    def events(self):
+        self.app.canvasBoard.bind("<Button-1>", self.clickMouseButton)
+        self.app.canvasBoard.bind("<Button-3>", self.clickMouseButton)
+        self.app.buttons[0][3].config(command = self.clickStartButton)
+        self.app.buttons[1][3].config(command = self.clickStopButton)
+        self.app.buttons[2][3].config(command = self.clickCleanButton)
+        self.app.buttons[3][3].config(command = self.app.root.destroy)
+
+    def game(self):
+        if self.status == True:
+            self.playGame()
+        self.app.root.after(125, self.game)
         
     def __del__(self):
         return 0
