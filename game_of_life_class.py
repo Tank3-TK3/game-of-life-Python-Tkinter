@@ -8,11 +8,6 @@
 #                                CLASS
 
 class GameOfLifeClass():
-    app = None
-    gameMatrix = None
-    neigcount = None
-    status = None
-
     def __init__(self, app):
         self.app = app
         self.gameMatrix = self.createDashboardMatrix()
