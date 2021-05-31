@@ -15,18 +15,6 @@ import random
 #                                CLASS
 
 class GameOfLifeInterface(tk.Frame):
-    root = None
-    frameOne = None
-    txtBoard = None
-    fontTitles = None
-    fontText = None
-    board = None
-    canvasBoard = None
-    frameButtons = None
-    buttons = None
-    frameInformation = None
-    txtInformation = None
-
     def __init__(self, root = None):
         tk.Frame.__init__(self, root)
         self.root = self.drawRoot(root)
