@@ -1,122 +1,124 @@
-################################################################################
-#                                                                              #
-#                    Coded by Roberto (Tank3) Cruz Lozano                      #
-#                                                                              #
-################################################################################
-
-################################################################################
-#                               MODULES
-
 import tkinter as tk
-from tkinter import font
+import colorsys
 import random
 
-################################################################################
-#                                CLASS
+_BG        = "#1A1B26"
+_CANVAS_BG = "#24283B"
+_GRID      = "#2A2E42"
+_DEAD      = "#24283B"
+_ACCENT    = "#7AA2F7"
+_TEXT      = "#C0CAF5"
+_SUBTEXT   = "#565F89"
+_BTN_FG    = "#1A1B26"
+
 
 class GameOfLifeInterface(tk.Frame):
-    def __init__(self, root = None):
-        tk.Frame.__init__(self, root)
-        self.root = self.drawRoot(root)
-        self.fontTitles = tk.font.Font(family = "Arial", size = 25)
-        self.fontText = tk.font.Font(family = "Arial", size = 15)
-        self.frameOne = self.drawFrameOne()
-        self.txtBoard = self.drawTextBoard()
-        self.board = self.drawBoard()
-        self.canvasBoard = self.drawCanvasBoard()
-        self.frameButtons = self.drawFrameButtons()
-        self.buttons = self.drawButtons()
-        self.frameInformation = self.drawFrameInformation()
-        self.txtInformation = self.drawTextInformation()
+    ROWS      = 60
+    COLS      = 80
+    CELL_SIZE = 9
 
-    def drawRoot(self,root):
-        root.title("Game of Life (v1.01)")
-        root.geometry("600x700+50+50")
-        root.iconbitmap("./img/Glider.ico")
-        root.config(background = "#FFFFFF")
-        root.resizable(width = False, height = False)
-        return root
+    def __init__(self, root):
+        super().__init__(root)
+        self.root = root
+        self._configure_root()
+        self._build_layout()
+        self._cell_ids = [[None] * self.COLS for _ in range(self.ROWS)]
+        self._init_cells()
 
-    def drawFrameOne(self):
-        frameOne = tk.Frame(self.root, background = "#22232D")
-        frameOne.pack_propagate(0)
-        frameOne.pack(fill = 'both', side = 'left', expand = 'True')
-        return frameOne
+    def _configure_root(self):
+        self.root.title("Game of Life  v2.0")
+        self.root.configure(bg=_BG)
+        self.root.resizable(False, False)
+        try:
+            self.root.iconbitmap("./img/Glider.ico")
+        except Exception:
+            pass
 
-    def drawTextBoard(self):
-        txtBoard = tk.Label(self.frameOne, foreground = "#FFFFFF", background = "#22232D")
-        txtBoard.config(text = "Game of Life", font = self.fontTitles)
-        txtBoard.pack_propagate(0)
-        txtBoard.pack()
-        return txtBoard
+    def _build_layout(self):
+        tk.Label(
+            self.root, text="Game of Life",
+            font=("Arial", 22, "bold"), bg=_BG, fg=_ACCENT,
+        ).pack(pady=(12, 6))
 
-    def drawBoard(self):
-        board = tk.Frame(self.frameOne,background="#FFFFFF",width="500",height="500",bd=0)
-        board.pack_propagate(0)
-        board.pack(side='top',padx=0,pady=0)
-        return board
+        self.canvas = tk.Canvas(
+            self.root,
+            width=self.COLS * self.CELL_SIZE,
+            height=self.ROWS * self.CELL_SIZE,
+            bg=_CANVAS_BG, bd=0,
+            highlightthickness=1,
+            highlightbackground=_ACCENT,
+        )
+        self.canvas.pack(padx=20)
 
-    def drawCanvasBoard(self):
-        canvasBoard = tk.Canvas(self.board, background = "#666B8A")
-        canvasBoard.config(bd = 0, highlightthickness = 1, relief = 'ridge')
-        canvasBoard.pack_propagate(0)
-        canvasBoard.pack(fill = 'both', side = 'top', expand = 'True')
-        for i in range(20, 500, 20):
-            canvasBoard.create_line(i, 0, i, 500, fill = "#FFFFFF")
-            canvasBoard.create_line(0, i, 500, i, fill = "#FFFFFF")
-        return canvasBoard
+        stats_row = tk.Frame(self.root, bg=_BG)
+        stats_row.pack(fill="x", padx=20, pady=(6, 2))
+        self.gen_var   = tk.StringVar(value="Generación: 0")
+        self.alive_var = tk.StringVar(value="Vivas: 0")
+        tk.Label(stats_row, textvariable=self.gen_var,   font=("Consolas", 11), bg=_BG, fg=_TEXT).pack(side="left")
+        tk.Label(stats_row, textvariable=self.alive_var, font=("Consolas", 11), bg=_BG, fg=_TEXT).pack(side="right")
 
-    def drawFrameButtons(self):
-        frameButtons = tk.Frame(self.frameOne, background = "#22232D")
-        frameButtons.config(width = "500", height = "100")
-        frameButtons.pack_propagate(0)
-        frameButtons.pack(side='top',padx=0,pady=10)
-        return frameButtons
-    
-    def drawButtons(self):
-        buttons = [["Start", "#6CD987", "#121212"], ["Stop", "#D977B7", "#121212"],
-                   ["Clean", "#837ACC", "#121212"], ["Exit", "#D3A16B", "#121212"]]
-        for i in buttons:
-            i.append(tk.Button(self.frameButtons, text = i[0], font = self.fontText))
-            i[3].config(background = i[1], foreground = i[2])
-            i[3].pack_propagate(0)
-            i[3].pack(fill = 'both', side = 'left', expand = 'True', padx = 5, pady = 20)
-        return buttons
+        btn_row = tk.Frame(self.root, bg=_BG)
+        btn_row.pack(fill="x", padx=20, pady=6)
+        kw = dict(font=("Arial", 11, "bold"), fg=_BTN_FG, relief="flat", padx=6, pady=8, cursor="hand2")
+        self.btn_start = tk.Button(btn_row, text="Iniciar",   bg="#9ECE6A", **kw)
+        self.btn_stop  = tk.Button(btn_row, text="Pausar",    bg="#F7768E", **kw)
+        self.btn_step  = tk.Button(btn_row, text="Paso",      bg="#7AA2F7", **kw)
+        self.btn_rand  = tk.Button(btn_row, text="Aleatorio", bg="#BB9AF7", **kw)
+        self.btn_clear = tk.Button(btn_row, text="Limpiar",   bg="#FF9E64", **kw)
+        self.btn_exit  = tk.Button(btn_row, text="Salir",     bg="#414868", fg=_TEXT, relief="flat",
+                                   padx=6, pady=8, cursor="hand2", font=("Arial", 11, "bold"))
+        for btn in (self.btn_start, self.btn_stop, self.btn_step,
+                    self.btn_rand, self.btn_clear, self.btn_exit):
+            btn.pack(side="left", expand=True, fill="x", padx=2)
 
-    def drawFrameInformation(self):
-        frameInformation = tk.Frame(self.frameOne, background = "#22232D")
-        frameInformation.config(height = "25")
-        frameInformation.pack_propagate(0)
-        frameInformation.pack(fill = 'x', side = 'bottom', padx = 0, pady = 0)
-        return frameInformation
+        speed_row = tk.Frame(self.root, bg=_BG)
+        speed_row.pack(fill="x", padx=20, pady=(0, 10))
+        tk.Label(speed_row, text="Velocidad:", font=("Arial", 10), bg=_BG, fg=_TEXT).pack(side="left")
+        self.speed_var = tk.IntVar(value=8)
+        tk.Scale(
+            speed_row, variable=self.speed_var,
+            from_=1, to=40, orient="horizontal",
+            bg=_BG, fg=_TEXT, troughcolor=_GRID,
+            highlightthickness=0, showvalue=True,
+        ).pack(side="left", fill="x", expand=True)
+        tk.Label(speed_row, text="gen/s", font=("Arial", 10), bg=_BG, fg=_TEXT).pack(side="left", padx=(4, 0))
 
-    def drawTextInformation(self):
-        txtInformation = [["v1.01", "right"], ["Coded by Tank3", "left"]]
-        for i in txtInformation:
-            i.append(tk.Label(self.frameInformation, foreground = "#FFFFFF", background = "#22232D"))
-            i[2].config(text = i[0], font = self.fontText)
-            i[2].pack_propagate(0)
-            i[2].pack(side = i[1])
-        return txtInformation
+        tk.Label(
+            self.root, text="Coded by Tank3  |  v2.0",
+            font=("Arial", 9), bg=_BG, fg=_SUBTEXT,
+        ).pack(pady=(0, 8))
 
-    def aliveCell(self,j):
-        if j[7] == None or j[8] == None:
-            j[7] = self.canvasBoard.create_rectangle(j[1], j[2], j[3], j[4])
-            j[8] = self.canvasBoard.create_rectangle(j[1] + 5, j[2] + 5, j[3] - 5, j[4] - 5)
-            self.canvasBoard.itemconfig(j[7], fill = self.randHex(), outline = self.randHex())
-            self.canvasBoard.itemconfig(j[8], fill = self.randHex(), outline = self.randHex())
-        else:
-            self.canvasBoard.itemconfig(j[7], fill = self.randHex(), outline = self.randHex())
-            self.canvasBoard.itemconfig(j[8], fill = self.randHex(), outline = self.randHex())
-        j[5] = 1
+    def _init_cells(self):
+        cs = self.CELL_SIZE
+        for r in range(self.ROWS):
+            for c in range(self.COLS):
+                x1, y1 = c * cs, r * cs
+                self._cell_ids[r][c] = self.canvas.create_rectangle(
+                    x1, y1, x1 + cs, y1 + cs,
+                    fill=_DEAD, outline=_GRID,
+                )
 
-    def deadCell(self,j):
-        self.canvasBoard.itemconfig(j[7], fill = "#666B8A", outline = "#FFFFFF")
-        self.canvasBoard.itemconfig(j[8], fill = "#666B8A", outline = "#666B8A")
-        j[5] = 0
+    # ── public drawing API ────────────────────────────────────────────────────
 
-    def randHex(self):
-        return "#%02x%02x%02x" % (random.randint(0,255), random.randint(0,255), random.randint(0,255))
+    def set_alive(self, row, col):
+        color = _vivid_color()
+        self.canvas.itemconfig(self._cell_ids[row][col], fill=color, outline=color)
 
-    def __del__(self):
-        return 0
+    def set_dead(self, row, col):
+        self.canvas.itemconfig(self._cell_ids[row][col], fill=_DEAD, outline=_GRID)
+
+    def apply_mask(self, changed, state):
+        for r, c in zip(*changed.nonzero()):
+            if state[r, c]:
+                self.set_alive(r, c)
+            else:
+                self.set_dead(r, c)
+
+    def update_stats(self, generation, alive):
+        self.gen_var.set(f"Generación: {generation:,}")
+        self.alive_var.set(f"Vivas: {alive:,}")
+
+
+def _vivid_color():
+    r, g, b = colorsys.hsv_to_rgb(random.random(), 0.75, 0.95)
+    return "#%02x%02x%02x" % (int(r * 255), int(g * 255), int(b * 255))

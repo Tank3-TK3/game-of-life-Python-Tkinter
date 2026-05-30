@@ -1,131 +1,130 @@
-################################################################################
-#                                                                              #
-#                    Coded by Roberto (Tank3) Cruz Lozano                      #
-#                                                                              #
-################################################################################
+import numpy as np
 
-################################################################################
-#                                CLASS
 
-class GameOfLifeClass():
-    def __init__(self, app):
-        self.app = app
-        self.gameMatrix = self.createDashboardMatrix()
-        self.neigcount = 0
-        self.status = False
-    
-    def createDashboardMatrix(self): # Generates and returns the game matrix
-        matrix = []
-        x, y, cont = 0, 0, 0
-        for i in range(0, 25):
-            matrix.append([])
-            for j in range(0, 25):
-                #ID, X1, Y1, X2, Y2, ASTATUS, PSTATUS, CANVE, CANVI - STATUS: 1 = alive, 0 = dead
-                matrix[i].append([cont, x, y, x + 20, y + 20, 0, 0, None, None])
-                x += 20
-                cont += 1
-            y += 20
-            x = 0
-        return matrix
+class GameOfLifeClass:
+    def __init__(self, ui):
+        self.ui = ui
+        self.rows = ui.ROWS
+        self.cols = ui.COLS
+        self.cell_size = ui.CELL_SIZE
+        self.state = np.zeros((self.rows, self.cols), dtype=np.uint8)
+        self.generation = 0
+        self.running = False
+        self._drag_value = None
 
-    def clickMouseButton(self, event): # Color or erase the selected space inside the board
-        x, y = event.x, event.y
-        for i in self.gameMatrix:
-            for j in i:
-                if (x > j[1] and x < j[3]) and (y > j[2] and y < j[4]):
-                    if j[5] == 0:
-                        self.app.aliveCell(j)
-                    else:
-                        self.app.deadCell(j)
+    # ── Conway logic ──────────────────────────────────────────────────────────
 
-    def clickCleanButton(self): # Clears the game board
-        for i in self.gameMatrix:
-            for j in i:
-                if j[5] == 1:
-                    self.app.deadCell(j)
+    def _neighbors(self):
+        s = self.state
+        above  = np.roll(s,  1, axis=0)
+        below  = np.roll(s, -1, axis=0)
+        return (above
+                + below
+                + np.roll(s,  1, axis=1)
+                + np.roll(s, -1, axis=1)
+                + np.roll(above,  1, axis=1)
+                + np.roll(above, -1, axis=1)
+                + np.roll(below,  1, axis=1)
+                + np.roll(below, -1, axis=1))
 
-    def countingNeighbors(self, i, j):
-        if self.gameMatrix[(i - 1) % 25][(j - 1) % 25][5] == 1:
-            self.neigcount += 1
-        if self.gameMatrix[i % 25][(j - 1) % 25][5] == 1:
-            self.neigcount += 1
-        if self.gameMatrix[(i + 1) % 25][(j - 1) % 25][5] == 1:
-            self.neigcount += 1
-        if self.gameMatrix[(i - 1) % 25][j % 25][5] == 1:
-            self.neigcount += 1
-        if self.gameMatrix[(i + 1) % 25][j % 25][5] == 1:
-            self.neigcount += 1
-        if self.gameMatrix[(i - 1) % 25][(j + 1) % 25][5] == 1:
-            self.neigcount += 1
-        if self.gameMatrix[i % 25][(j + 1) % 25][5] == 1:
-            self.neigcount += 1
-        if self.gameMatrix[(i + 1) % 25][(j + 1) % 25][5] == 1:
-            self.neigcount += 1
-        return self.neigcount
+    def _step(self):
+        prev = self.state.copy()
+        n = self._neighbors()
+        alive = self.state == 1
+        self.state = ((alive & ((n == 2) | (n == 3))) | (~alive & (n == 3))).astype(np.uint8)
+        self.generation += 1
+        self.ui.apply_mask(prev != self.state, self.state)
+        self.ui.update_stats(self.generation, int(self.state.sum()))
 
-    def aliveDead(self):
-        for i in range(0, 25):
-            for j in range(0, 25):
-                self.neigcount = self.countingNeighbors(i, j)
-                if self.gameMatrix[i][j][5] == 1:
-                    if self.neigcount == 2 or self.neigcount == 3:
-                        self.gameMatrix[i][j][6] = 1
-                    else:
-                        self.gameMatrix[i][j][6] = 0
-                else:
-                    if self.neigcount == 3:
-                        self.gameMatrix[i][j][6] = 1
-                    else:
-                        self.gameMatrix[i][j][6] = 0
-                self.neigcount = 0
+    # ── actions ───────────────────────────────────────────────────────────────
 
-    def updateGameBoard(self):
-        for i in self.gameMatrix:
-            for j in i:
-                j[5] = j[6]
-                j[6] = 0
+    def _start(self):
+        self.running = True
 
-    def drawGameBoard(self):
-        for i in self.gameMatrix:
-            for j in i:
-                if j[5] == 1:
-                    self.app.aliveCell(j)
-                else:
-                    self.app.deadCell(j)
+    def _stop(self):
+        self.running = False
 
-    def printGameBoard(self):
-        for i in self.gameMatrix:
-            for j in i:
-                print("[",j[5],j[6],"]",end="")
-            print()
-        print("\n\n")
+    def _step_once(self):
+        self._stop()
+        self._step()
 
-    def clickStartButton(self): # Starts the game
-        self.status = True
-        
-    def clickStopButton(self): # Starts the game
-        self.status = False
+    def _randomize(self):
+        self.state = (np.random.random((self.rows, self.cols)) < 0.3).astype(np.uint8)
+        self.generation = 0
+        self.ui.apply_mask(np.ones((self.rows, self.cols), dtype=bool), self.state)
+        self.ui.update_stats(0, int(self.state.sum()))
 
-    def playGame(self):
-        self.aliveDead()
-        self.updateGameBoard()
-        self.drawGameBoard()
+    def _clear(self):
+        changed = self.state.astype(bool)
+        self.state[:] = 0
+        self.generation = 0
+        self.running = False
+        self.ui.apply_mask(changed, self.state)
+        self.ui.update_stats(0, 0)
 
-    def randHex(self):
-        return "#%02x%02x%02x" % (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    # ── mouse events ──────────────────────────────────────────────────────────
+
+    def _cell_at(self, event):
+        r = event.y // self.cell_size
+        c = event.x // self.cell_size
+        if 0 <= r < self.rows and 0 <= c < self.cols:
+            return r, c
+        return None, None
+
+    def _on_press(self, event):
+        r, c = self._cell_at(event)
+        if r is None:
+            return
+        self._drag_value = 1 - int(self.state[r, c])
+        self._paint(r, c)
+
+    def _on_drag(self, event):
+        if self._drag_value is None:
+            return
+        r, c = self._cell_at(event)
+        if r is None or int(self.state[r, c]) == self._drag_value:
+            return
+        self._paint(r, c)
+
+    def _on_release(self, _event):
+        self._drag_value = None
+
+    def _on_erase_drag(self, event):
+        r, c = self._cell_at(event)
+        if r is None or self.state[r, c] == 0:
+            return
+        self.state[r, c] = 0
+        self.ui.set_dead(r, c)
+        self.ui.update_stats(self.generation, int(self.state.sum()))
+
+    def _paint(self, r, c):
+        self.state[r, c] = self._drag_value
+        if self._drag_value:
+            self.ui.set_alive(r, c)
+        else:
+            self.ui.set_dead(r, c)
+        self.ui.update_stats(self.generation, int(self.state.sum()))
+
+    # ── wiring ────────────────────────────────────────────────────────────────
 
     def events(self):
-        self.app.canvasBoard.bind("<Button-1>", self.clickMouseButton)
-        self.app.canvasBoard.bind("<Button-3>", self.clickMouseButton)
-        self.app.buttons[0][3].config(command = self.clickStartButton)
-        self.app.buttons[1][3].config(command = self.clickStopButton)
-        self.app.buttons[2][3].config(command = self.clickCleanButton)
-        self.app.buttons[3][3].config(command = self.app.root.destroy)
+        self.ui.canvas.bind("<ButtonPress-1>",   self._on_press)
+        self.ui.canvas.bind("<B1-Motion>",        self._on_drag)
+        self.ui.canvas.bind("<ButtonRelease-1>",  self._on_release)
+        self.ui.canvas.bind("<B3-Motion>",        self._on_erase_drag)
+        self.ui.canvas.bind("<ButtonPress-3>",    self._on_erase_drag)
+
+        self.ui.btn_start.config(command=self._start)
+        self.ui.btn_stop.config( command=self._stop)
+        self.ui.btn_step.config( command=self._step_once)
+        self.ui.btn_rand.config( command=self._randomize)
+        self.ui.btn_clear.config(command=self._clear)
+        self.ui.btn_exit.config( command=self.ui.root.destroy)
+
+    # ── game loop ─────────────────────────────────────────────────────────────
 
     def game(self):
-        if self.status == True:
-            self.playGame()
-        self.app.root.after(125, self.game)
-        
-    def __del__(self):
-        return 0
+        if self.running:
+            self._step()
+        delay = max(25, 1000 // self.ui.speed_var.get())
+        self.ui.root.after(delay, self.game)
